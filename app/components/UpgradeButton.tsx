@@ -1,30 +1,45 @@
-// components/UpgradeButton.tsx
 'use client';
 
+import { useState } from 'react';
+
 export default function UpgradeButton() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const handleUpgrade = async () => {
-    console.log('🔁 Upgrade button clicked');
+    setLoading(true);
+    setError('');
 
-    const res = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-    });
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.url) {
-      console.log('✅ Redirecting to Stripe:', data.url);
-      window.location.href = data.url;
-    } else {
-      console.error('❌ Checkout failed:', data.error);
+      if (res.ok && data.url) {
+        window.location.href = data.url; // ✅ Redirect to Stripe Checkout
+      } else {
+        setError(data.error || 'Upgrade failed.');
+      }
+    } catch (err) {
+      console.error('❌ Error upgrading:', err);
+      setError('Unexpected error occurred.');
     }
+
+    setLoading(false);
   };
 
   return (
-    <button
-      onClick={handleUpgrade}
-      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-    >
-      Upgrade to Pro
-    </button>
+    <div className="mt-4">
+      <button
+        onClick={handleUpgrade}
+        disabled={loading}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition"
+      >
+        {loading ? 'Redirecting...' : 'Upgrade to Pro'}
+      </button>
+      {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+    </div>
   );
 }
