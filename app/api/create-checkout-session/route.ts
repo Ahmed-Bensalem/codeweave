@@ -1,18 +1,14 @@
 // app/api/create-checkout-session/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server'; // ✅ correct import
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  // Set to correct version or remove this line if your account uses default version
-  // @ts-ignore
-  apiVersion: '2025-06-30.basil',
+  apiVersion: "2025-06-30.basil", // ✅ use a valid version
 });
 
 export async function POST(req: NextRequest) {
-  const authData = await auth(); // ✅ await this
-  const userId = authData.userId;
-  console.log('✅ Clerk userId:', userId);
+  const { userId } = auth(); // ✅ no need to await — returns plain object in App Router
 
   if (!userId) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
