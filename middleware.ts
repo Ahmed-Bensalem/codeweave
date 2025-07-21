@@ -10,18 +10,18 @@ const isPublicRoute = createRouteMatcher([
   '/api/stripe-webhook',
 ]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
+  // Don’t run auth check for public routes
   if (isPublicRoute(req)) {
     return NextResponse.next();
   }
 
-  return auth().then(({ userId }) => {
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
+  const { userId } = await auth(); // Only runs for protected routes
+  if (!userId) {
+    return NextResponse.redirect(new URL('/sign-in', req.url));
+  }
 
-    return NextResponse.next();
-  });
+  return NextResponse.next();
 });
 
 export const config = {
