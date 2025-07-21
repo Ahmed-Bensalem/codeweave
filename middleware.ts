@@ -1,18 +1,27 @@
 // middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
-  '/', // Home
-  '/success', // After payment
+  '/',
+  '/success',
   '/api/generate',
   '/api/create-checkout-session',
   '/api/stripe-webhook',
 ]);
 
-export default clerkMiddleware((auth, req) => {
-  if (isPublicRoute(req)) return;
+export default clerkMiddleware(async (auth, req) => {
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
 
-  auth().protect();
+  const { userId } = await auth();
+
+  if (!userId) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {
