@@ -2,8 +2,9 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Define public routes
 const isPublicRoute = createRouteMatcher([
-  '/', // ✅ Home page must be public
+  '/', // Homepage should be public
   '/success',
   '/api/generate',
   '/api/create-checkout-session',
@@ -12,11 +13,10 @@ const isPublicRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, req) => {
   if (isPublicRoute(req)) {
-    return NextResponse.next(); // ✅ Allow public pages
+    return NextResponse.next(); // Allow access without auth
   }
 
-  const { userId } = await auth(); // 👈 No `protect`, just destructure
-
+  const { userId } = await auth(); // Only runs for protected routes
   if (!userId) {
     return NextResponse.redirect(new URL('/sign-in', req.url));
   }
@@ -25,5 +25,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'], // ✅ Match everything except static files
+  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'],
 };
