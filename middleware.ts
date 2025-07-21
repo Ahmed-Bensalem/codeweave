@@ -3,16 +3,18 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 const isPublicRoute = createRouteMatcher([
-  '/',                        // ✅ Make homepage public
+  '/',                              // ✅ Homepage must be public
   '/success',
   '/api/generate',
   '/api/create-checkout-session',
   '/api/stripe-webhook',
+  '/sign-in',
+  '/sign-up',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isPublicRoute(req)) {
-    return NextResponse.next(); // ✅ allow public access
+    return NextResponse.next();
   }
 
   const { userId } = await auth();
@@ -24,5 +26,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'],
+  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'], // only run on real pages
 };
