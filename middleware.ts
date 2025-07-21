@@ -1,28 +1,18 @@
 // middleware.ts
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { authMiddleware } from "@clerk/nextjs";
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/api/generate',
-  '/api/create-checkout-session',
-  '/api/stripe-webhook',
-  '/success',
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) {
-    return NextResponse.next(); // ✅ allow public access
-  }
-
-  const { userId } = await auth(); // ✅ this only runs for protected routes
-  if (!userId) {
-    return new NextResponse('Unauthorized', { status: 401 });
-  }
-
-  return NextResponse.next();
+export default authMiddleware({
+  publicRoutes: [
+    '/',
+    '/success',
+    '/api/generate',
+    '/api/create-checkout-session',
+    '/api/stripe-webhook',
+  ],
 });
 
 export const config = {
-  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'],
+  matcher: [
+    '/((?!_next/image|_next/static|favicon.ico).*)',
+  ],
 };
