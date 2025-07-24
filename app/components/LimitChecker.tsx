@@ -1,43 +1,54 @@
-// app/components/LimitChecker.ts
-import { useEffect, useState } from 'react';
-
-const USAGE_KEY = 'codeweave-usage';
+import { useUser } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
 
 export default function useLimitCheck() {
-  const [limitReached, setLimitReached] = useState(false);
-
+  const { user } = useUser();
+  const [triesLeft, setTriesLeft] = useState<number | null>(null);
+  const [limitError, setError] = useState<string | null>(null);
+  const plan = user?.unsafeMetadata.plan as string;
   useEffect(() => {
-    const saved = localStorage.getItem(USAGE_KEY);
-    const today = new Date().toDateString();
-
-    if (saved) {
-      const { date, count } = JSON.parse(saved);
-      if (date === today && count >= 3) {
-        setLimitReached(true);
-      }
-    }
-  }, []);
-
-  const incrementUsage = () => {
-    const today = new Date().toDateString();
-    const saved = localStorage.getItem(USAGE_KEY);
-    let data = { date: today, count: 0 };
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed.date === today) {
-        data.count = parsed.count + 1;
-      }
+    if (user && user.unsafeMetadata.triesLeft !== undefined) {
+      console.log(
+        "Loaded triesLeft from unsafeMetadata:",
+        user.unsafeMetadata.triesLeft
+      );
+      setTriesLeft(user.unsafeMetadata.triesLeft as number);
     } else {
-      data.count = 1;
+      console.log("triesLeft not found in unsafeMetadata for user:", user?.id);
+    }
+  }, [user, plan]);
+
+  const incrementUsage = useCallback(async () => {
+    if (!user) {
+      console.log("Cannot increment usage: No user");
+      setError("No user found");
+      return;
+    }
+    if (triesLeft <= 0) {
+      console.log("Cannot increment usage: No tries left");
+      setError("No tries left");
+      return;
     }
 
-    localStorage.setItem(USAGE_KEY, JSON.stringify({ date: today, count: data.count }));
-
-    if (data.count >= 3) {
-      setLimitReached(true);
+    console.log("Decrementing triesLeft from:", triesLeft);
+    try {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          triesLeft: triesLeft - 1,
+        },
+      });
+      await user.reload(); // Refresh user object to sync metadata
+      console.log("Successfully updated triesLeft to:", triesLeft - 1);
+      setTriesLeft(triesLeft - 1);
+      setError(null);
+    } catch (error) {
+      console.error("Failed to update tries:", error);
+      setError("Failed to update tries: " + (error.message || "Unknown error"));
     }
-  };
+  }, [user, triesLeft]);
 
-  return { limitReached, incrementUsage };
+  const limitReached = triesLeft !== null && triesLeft <= 0;
+
+  return { limitReached, incrementUsage, triesLeft, limitError };
 }

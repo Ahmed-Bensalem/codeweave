@@ -1,26 +1,39 @@
-// app/api/create-checkout-session/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { auth } from '@clerk/nextjs/server';
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import { auth } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil', // ✅ Use correct version from Stripe dashboard
+  apiVersion: "2025-06-30.basil",
 });
 
 export async function POST(req: NextRequest) {
-  const session = await auth(); // ✅ Await here
+  const session = await auth();
   const userId = session.userId;
-
+  const { passedPlan } = await req.json();
+  const plan = passedPlan || "pro";
   if (!userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    console.log("No authenticated user found");
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-
+  const priceIdMap: { [key: string]: string } = {
+    pro: process.env.STRIPE_PRO_MONTHLY_PRICE_ID!,
+    teams: process.env.STRIPE_TEAMS_MONTHLY_PRICE_ID!,
+  };
   try {
+    console.log(
+      "Creating Stripe checkout session for user:",
+      userId,
+      "with plan:",
+      plan
+    );
+    if (!priceIdMap[plan]) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
     const stripeSession = await stripe.checkout.sessions.create({
-      mode: 'subscription',
+      mode: "subscription",
       line_items: [
         {
-          price: process.env.STRIPE_PRO_MONTHLY_PRICE_ID!,
+          price: priceIdMap[plan],
           quantity: 1,
         },
       ],
@@ -28,12 +41,14 @@ export async function POST(req: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
       metadata: {
         userId,
+        plan,
       },
     });
 
+    console.log("Stripe session created:", stripeSession.id);
     return NextResponse.json({ url: stripeSession.url });
   } catch (err) {
-    console.error('❌ Stripe checkout failed:', err);
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 500 });
+    console.error("❌ Stripe checkout failed for user:", userId, err);
+    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }
