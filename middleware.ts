@@ -1,31 +1,13 @@
-// middleware.ts
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/init",
-  "/dashboard(.*)",
-  "/pricing",
-  "/sign-in",
-  "/sign-up",
-  "/success",
-  "/api/generate",
-  "/api/create-checkout-session",
-  "/api/stripe-webhook",
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) {
+export default clerkMiddleware((auth, req) => {
+  try {
     return NextResponse.next();
+  } catch (error) {
+    console.error("Middleware error:", error);
+    return NextResponse.error();
   }
-
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
-
-  return NextResponse.next();
 });
 
 export const config = {
