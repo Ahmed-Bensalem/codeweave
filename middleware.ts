@@ -1,5 +1,5 @@
 // middleware.ts
-export const runtime = "edge";
+export const runtime = "experimental-edge";
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
