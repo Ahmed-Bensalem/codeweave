@@ -8,8 +8,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^4.13.23",
-    "@clerk/nextjs": "^6.25.4",
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@clerk/nextjs": "^6.26.0",
     "@clerk/themes": "^2.3.3",
     "@fontsource/inter": "^5.0.16",
     "@heroicons/react": "^2.2.0",
