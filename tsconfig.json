@@ -23,9 +23,14 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@components/*": ["app/components/*"]
-    }
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "app/components/*"
+      ]
+    },
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",
