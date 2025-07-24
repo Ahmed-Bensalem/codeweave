@@ -1,15 +1,30 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+// middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
-export default clerkMiddleware((auth, req) => {
-  try {
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in',
+  '/sign-up',
+  '/success',
+  '/api/generate',
+  '/api/create-checkout-session',
+  '/api/stripe-webhook',
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isPublicRoute(req)) {
     return NextResponse.next();
-  } catch (error) {
-    console.error("Middleware error:", error);
-    return NextResponse.error();
   }
+
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.redirect(new URL('/sign-in', req.url));
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next|favicon.ico).*)"],
+  matcher: ['/((?!.*\\..*|_next|favicon.ico).*)'],
 };
