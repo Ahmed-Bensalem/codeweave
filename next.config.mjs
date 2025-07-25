@@ -11,6 +11,14 @@ const nextConfig = {
     STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: 'https://codeweave.co',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

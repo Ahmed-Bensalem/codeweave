@@ -9,15 +9,20 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useAuth } from "@clerk/nextjs";
 import {
-  FaDocker,
-  FaCode,
-  FaSpinner,
-  FaTerminal,
-  FaPython,
-  FaBug,
   FaAws,
   FaMicrosoft,
   FaGoogle,
+  FaDocker,
+  FaTerminal,
+  FaPython,
+  FaBug,
+  FaRobot,
+  FaDatabase,
+  FaTools,
+  FaCogs,
+  FaRocket,
+  FaChartBar,
+  FaSpinner,
 } from "react-icons/fa";
 import {
   SiTerraform,
@@ -28,18 +33,20 @@ import {
   SiHashicorp,
   SiFlux,
   SiJenkins,
+  SiGo,
   SiAwslambda,
   SiOpenai,
   SiHuggingface,
-  SiGo,
   SiPython,
 } from "react-icons/si";
+import { MdDocumentScanner, MdDataObject } from "react-icons/md";
 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import useLimitCheck from "../components/LimitChecker";
 import ClientWrapper from "../components/ClientWrapper";
 import UpgradeModal from "../components/UpgradeModal";
+import PremiumModal from "../components/PremiumModal";
 
 type CodeOutput = string | Record<string, string>;
 
@@ -54,128 +61,30 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const proTools = [
+    "Model Fine-Tuning Starter",
+    "Model Training Pipeline",
+    "LLM Evaluation Toolkit",
+    "LLM Deployment",
+    "Vector DB",
+    "Vault",
+    "Jenkins",
+    "AWS Lambda",
+    "Bash Script",
+    "Packer",
+    "Azure",
+    "GCP",
+  ];
 
   const tools = [
-    {
-      name: "Chatbot Builder",
-      icon: <FaCode />,
-      description:
-        "Create intelligent, multi-turn conversational agents using AI.",
-      suggestions: [
-        "Build a chatbot",
-        "Add conversational memory",
-        "Customize chat flow",
-        "Enable AI assistance",
-      ],
-    },
-    {
-      name: "PDF / Document QA Bot",
-      icon: <FaCode />,
-      description:
-        "Extract insights and answer questions from documents and files.",
-      suggestions: [
-        "Answer questions from files",
-        "Extract key details",
-        "Enable document interaction",
-        "Process uploaded PDFs",
-      ],
-    },
-    {
-      name: "RAG Pipeline",
-      icon: <FaCode />,
-      description:
-        "Combine retrieval and generation to build context-aware applications.",
-      suggestions: [
-        "Retrieve relevant content",
-        "Embed documents",
-        "Connect with vector DB",
-        "Use external knowledge",
-      ],
-    },
-    {
-      name: "Data Preprocessing Pipeline",
-      icon: <FaCode />,
-      description: "Prepare and transform datasets for training or analysis.",
-      suggestions: [
-        "Clean raw data",
-        "Convert file formats",
-        "Handle missing values",
-        "Engineer features",
-      ],
-    },
-    {
-      name: "FastAPI Backend for GenAI",
-      icon: <FaCode />,
-      description:
-        "Expose models and logic through scalable APIs with FastAPI.",
-      suggestions: [
-        "Create backend API",
-        "Serve GenAI apps",
-        "Secure endpoints",
-        "Handle requests and auth",
-      ],
-    },
-    {
-      name: "Agent & Tool Builder",
-      icon: <FaCode />,
-      description: "Build AI agents that reason, act, and use external tools.",
-      suggestions: [
-        "Design tool-using agent",
-        "Automate workflows",
-        "Add tool chaining",
-        "Enable autonomous execution",
-      ],
-    },
-    {
-      name: "Model Fine-Tuning Starter",
-      icon: <FaCode />,
-      description: "Customize language models using your own datasets.",
-      suggestions: [
-        "Prepare fine-tuning data",
-        "Adjust model behavior",
-        "Upload training set",
-        "Start fine-tune workflow",
-      ],
-    },
-    {
-      name: "Model Training Pipeline",
-      icon: <FaCode />,
-      description: "Generate code to train, evaluate, and save custom models.",
-      suggestions: [
-        "Train ML models",
-        "Evaluate results",
-        "Save checkpoints",
-        "Log experiment metrics",
-      ],
-    },
-    {
-      name: "Streamlit Dashboard",
-      icon: <SiPython />,
-      description:
-        "Build visual interfaces to explore data or showcase applications.",
-      suggestions: [
-        "Create interactive UI",
-        "Visualize outputs",
-        "Build data apps",
-        "Deploy tools with UI",
-      ],
-    },
-    {
-      name: "LLM Evaluation Toolkit",
-      icon: <FaCode />,
-      description:
-        "Measure and compare model performance with automated tools.",
-      suggestions: [
-        "Grade LLM responses",
-        "Run evaluation suite",
-        "Log evaluation metrics",
-        "Test AI outputs",
-      ],
-    },
+    // --- DevOps ---
     {
       name: "AWS",
       icon: <FaAws />,
-      description: "Deploy and manage cloud infrastructure with AWS services.",
+      description:
+        "Provision an S3 bucket, Lambda function, and DynamoDB table with Terraform.",
       suggestions: [
         "Launch cloud resources",
         "Use storage and compute",
@@ -186,7 +95,8 @@ export default function Home() {
     {
       name: "Azure",
       icon: <FaMicrosoft />,
-      description: "Work with Microsoft Azure to build and scale applications.",
+      description:
+        "Deploy an Azure Kubernetes Service (AKS) cluster with autoscaling enabled.",
       suggestions: [
         "Deploy Azure services",
         "Use virtual machines",
@@ -198,7 +108,7 @@ export default function Home() {
       name: "GCP",
       icon: <FaGoogle />,
       description:
-        "Leverage Google Cloud services for compute, storage, and AI.",
+        "Set up a GKE cluster and deploy a Node.js API behind a Cloud Load Balancer.",
       suggestions: [
         "Deploy on GCP",
         "Use serverless functions",
@@ -210,7 +120,7 @@ export default function Home() {
       name: "Terraform",
       icon: <SiTerraform />,
       description:
-        "Provision infrastructure as code across multiple environments.",
+        "Generate Terraform code to provision an EC2 instance with security groups.",
       suggestions: [
         "Automate infrastructure",
         "Create Terraform plans",
@@ -221,7 +131,8 @@ export default function Home() {
     {
       name: "Kubernetes",
       icon: <SiKubernetes />,
-      description: "Orchestrate, deploy, and scale containerized applications.",
+      description:
+        "Deploy a Flask app with autoscaling and ConfigMaps in Kubernetes.",
       suggestions: [
         "Run container workloads",
         "Define deployment manifests",
@@ -233,7 +144,7 @@ export default function Home() {
       name: "Docker",
       icon: <FaDocker />,
       description:
-        "Containerize applications and environments for consistent deployment.",
+        "Create a Dockerfile for a FastAPI app with multi-stage builds and caching.",
       suggestions: [
         "Write Dockerfiles",
         "Build images",
@@ -242,22 +153,10 @@ export default function Home() {
       ],
     },
     {
-      name: "Ansible",
-      icon: <SiAnsible />,
-      description:
-        "Automate configuration and system setup using simple playbooks.",
-      suggestions: [
-        "Configure environments",
-        "Write playbooks",
-        "Manage remote systems",
-        "Deploy services",
-      ],
-    },
-    {
       name: "Helm",
       icon: <SiHelm />,
       description:
-        "Package, manage, and deploy Kubernetes applications with charts.",
+        "Create a Helm chart for deploying a multi-service app with ingress rules.",
       suggestions: [
         "Write Helm charts",
         "Templatize configurations",
@@ -266,31 +165,10 @@ export default function Home() {
       ],
     },
     {
-      name: "Packer",
-      icon: <SiPacker />,
-      description: "Build consistent machine images across cloud platforms.",
-      suggestions: [
-        "Define image templates",
-        "Create AMIs",
-        "Automate image builds",
-        "Use provisioning scripts",
-      ],
-    },
-    {
-      name: "Vault",
-      icon: <SiHashicorp />,
-      description: "Securely store and manage secrets and access credentials.",
-      suggestions: [
-        "Create secrets engines",
-        "Manage API tokens",
-        "Integrate with apps",
-        "Secure sensitive data",
-      ],
-    },
-    {
       name: "Flux",
       icon: <SiFlux />,
-      description: "Enable GitOps-based deployments and updates in Kubernetes.",
+      description:
+        "Set up a GitOps pipeline using Flux to sync Kubernetes manifests from GitHub.",
       suggestions: [
         "Set up GitOps pipelines",
         "Define sync rules",
@@ -299,9 +177,34 @@ export default function Home() {
       ],
     },
     {
+      name: "Ansible",
+      icon: <SiAnsible />,
+      description:
+        "Write an Ansible playbook to install Docker and configure a firewall on Ubuntu.",
+      suggestions: [
+        "Configure environments",
+        "Write playbooks",
+        "Manage remote systems",
+        "Deploy services",
+      ],
+    },
+    {
+      name: "Vault",
+      icon: <SiHashicorp />,
+      description:
+        "Use HashiCorp Vault to store and retrieve secrets for a production app.",
+      suggestions: [
+        "Create secrets engines",
+        "Manage API tokens",
+        "Integrate with apps",
+        "Secure sensitive data",
+      ],
+    },
+    {
       name: "Jenkins",
       icon: <SiJenkins />,
-      description: "Automate CI/CD workflows with pipelines and integrations.",
+      description:
+        "Build a Jenkins pipeline to test, build, and deploy a Java microservice.",
       suggestions: [
         "Build delivery pipelines",
         "Trigger builds",
@@ -310,9 +213,22 @@ export default function Home() {
       ],
     },
     {
+      name: "Packer",
+      icon: <SiPacker />,
+      description:
+        "Create a Packer template to build a custom AMI with NGINX and fail2ban.",
+      suggestions: [
+        "Define image templates",
+        "Create AMIs",
+        "Automate image builds",
+        "Use provisioning scripts",
+      ],
+    },
+    {
       name: "Bash Script",
       icon: <FaTerminal />,
-      description: "Automate system operations or tasks using shell scripting.",
+      description:
+        "Write a bash script to back up logs and clean up temp files daily.",
       suggestions: [
         "Write automation scripts",
         "Schedule cron jobs",
@@ -323,7 +239,8 @@ export default function Home() {
     {
       name: "Python Script",
       icon: <FaPython />,
-      description: "Build tools, utilities, or workflows using Python scripts.",
+      description:
+        "Build a Python script that renames files based on a CSV mapping.",
       suggestions: [
         "Write automation tools",
         "Process data files",
@@ -334,7 +251,8 @@ export default function Home() {
     {
       name: "Go Script",
       icon: <SiGo />,
-      description: "Create high-performance CLI tools and services using Go.",
+      description:
+        "Create a Go CLI tool that monitors disk usage and sends alerts.",
       suggestions: [
         "Write microservices",
         "Build CLI utilities",
@@ -345,7 +263,8 @@ export default function Home() {
     {
       name: "AWS Lambda",
       icon: <SiAwslambda />,
-      description: "Run event-driven functions without managing servers.",
+      description:
+        "Create a Lambda function to resize uploaded S3 images using Python.",
       suggestions: [
         "Write Lambda handlers",
         "Respond to triggers",
@@ -353,11 +272,190 @@ export default function Home() {
         "Run on-demand code",
       ],
     },
+
+    // --- GenAI ---
+    {
+      name: "Chatbot Builder",
+      icon: <FaRobot />,
+      description:
+        "Create a chatbot that answers customer FAQs using a custom knowledge base.",
+      suggestions: [
+        "Build a chatbot",
+        "Add conversational memory",
+        "Customize chat flow",
+        "Enable AI assistance",
+      ],
+    },
+    {
+      name: "PDF / Document QA Bot",
+      icon: <MdDocumentScanner />,
+      description:
+        "Build a QA bot that extracts answers from uploaded PDF invoices.",
+      suggestions: [
+        "Answer questions from files",
+        "Extract key details",
+        "Enable document interaction",
+        "Process uploaded PDFs",
+      ],
+    },
+    {
+      name: "RAG Pipeline",
+      icon: <FaDatabase />,
+      description:
+        "Create a RAG pipeline that uses Pinecone for vector storage and OpenAI for generation.",
+      suggestions: [
+        "Retrieve relevant content",
+        "Embed documents",
+        "Connect with vector DB",
+        "Use external knowledge",
+      ],
+    },
+    {
+      name: "Data Preprocessing Pipeline",
+      icon: <MdDataObject />,
+      description:
+        "Clean, normalize, and split a dataset of product reviews for fine-tuning.",
+      suggestions: [
+        "Clean raw data",
+        "Convert file formats",
+        "Handle missing values",
+        "Engineer features",
+      ],
+    },
+    {
+      name: "FastAPI Backend for GenAI",
+      icon: <FaCogs />,
+      description: "Expose a GPT-4 based sentiment analyzer using FastAPI.",
+      suggestions: [
+        "Create backend API",
+        "Serve GenAI apps",
+        "Secure endpoints",
+        "Handle requests and auth",
+      ],
+    },
+    {
+      name: "Agent & Tool Builder",
+      icon: <FaTools />,
+      description:
+        "Build an agent that scrapes job listings and updates a Notion table.",
+      suggestions: [
+        "Design tool-using agent",
+        "Automate workflows",
+        "Add tool chaining",
+        "Enable autonomous execution",
+      ],
+    },
+    {
+      name: "Model Fine-Tuning Starter",
+      icon: <SiOpenai />,
+      description:
+        "Fine-tune a LLaMA model on a custom dataset of financial documents.",
+      suggestions: [
+        "Prepare fine-tuning data",
+        "Adjust model behavior",
+        "Upload training set",
+        "Start fine-tune workflow",
+      ],
+    },
+    {
+      name: "Model Training Pipeline",
+      icon: <SiHuggingface />,
+      description:
+        "Build a training pipeline for a classification model using PyTorch and Hugging Face.",
+      suggestions: [
+        "Train ML models",
+        "Evaluate results",
+        "Save checkpoints",
+        "Log experiment metrics",
+      ],
+    },
+    {
+      name: "LLM Evaluation Toolkit",
+      icon: <FaChartBar />,
+      description:
+        "Evaluate three LLMs using accuracy and latency benchmarks on a summarization task.",
+      suggestions: [
+        "Grade LLM responses",
+        "Run evaluation suite",
+        "Log evaluation metrics",
+        "Test AI outputs",
+      ],
+    },
+    {
+      name: "LLM Deployment",
+      icon: <FaRocket />,
+      description:
+        "Deploy a Falcon-7B model using Hugging Face Transformers and a GPU Docker container.",
+      suggestions: [
+        "Expose model endpoints",
+        "Run inference servers",
+        "Handle scale",
+        "Connect with apps",
+      ],
+    },
+    {
+      name: "Vector DB",
+      icon: <FaDatabase />,
+      description:
+        "Set up a vector DB pipeline using FAISS to search support articles with embeddings.",
+      suggestions: [
+        "Build semantic search",
+        "Store document vectors",
+        "Use FAISS or Qdrant",
+        "Integrate with RAG",
+      ],
+    },
+    {
+      name: "Streamlit Dashboard",
+      icon: <SiPython />,
+      description:
+        "Build a Streamlit dashboard to visualize model performance metrics from a CSV.",
+      suggestions: [
+        "Create interactive UI",
+        "Visualize outputs",
+        "Build data apps",
+        "Deploy tools with UI",
+      ],
+    },
+    {
+      name: "Streamlit App",
+      icon: <SiPython />,
+      description: "Create fast data apps or prototypes with a web interface.",
+      suggestions: [
+        "Design interactive UIs",
+        "Display insights",
+        "Build MVP tools",
+        "Enable user input",
+      ],
+    },
+    {
+      name: "LangChain",
+      icon: <FaRobot />,
+      description:
+        "Build a LangChain agent that queries a local PDF file and answers questions.",
+      suggestions: [
+        "Use chains",
+        "Integrate memory",
+        "Add tools",
+        "Customize workflows",
+      ],
+    },
+    {
+      name: "Fine-tuning",
+      icon: <SiOpenai />,
+      description: "Improve models by training on custom labeled data.",
+      suggestions: [
+        "Refine model behavior",
+        "Upload training examples",
+        "Adjust outputs",
+        "Improve task performance",
+      ],
+    },
     {
       name: "OpenAI API",
       icon: <SiOpenai />,
       description:
-        "Access and interact with OpenAI's language and vision models.",
+        "Use OpenAI API to summarize meeting transcripts into action items.",
       suggestions: [
         "Generate text",
         "Summarize content",
@@ -378,54 +476,8 @@ export default function Home() {
       ],
     },
     {
-      name: "LangChain",
-      icon: <FaCode />,
-      description:
-        "Build composable LLM applications using chains, memory, and tools.",
-      suggestions: [
-        "Use chains",
-        "Integrate memory",
-        "Add tools",
-        "Customize workflows",
-      ],
-    },
-    {
-      name: "Vector DB",
-      icon: <FaCode />,
-      description: "Store and search embeddings using vector databases.",
-      suggestions: [
-        "Build semantic search",
-        "Store document vectors",
-        "Use FAISS or Qdrant",
-        "Integrate with RAG",
-      ],
-    },
-    {
-      name: "Fine-tuning",
-      icon: <SiOpenai />,
-      description: "Improve models by training on custom labeled data.",
-      suggestions: [
-        "Refine model behavior",
-        "Upload training examples",
-        "Adjust outputs",
-        "Improve task performance",
-      ],
-    },
-    {
-      name: "LLM Deployment",
-      icon: <FaCode />,
-      description:
-        "Serve large language models for use in production environments.",
-      suggestions: [
-        "Expose model endpoints",
-        "Run inference servers",
-        "Handle scale",
-        "Connect with apps",
-      ],
-    },
-    {
       name: "Agent & Tools",
-      icon: <FaCode />,
+      icon: <FaTools />,
       description:
         "Combine agents with external tools to complete complex tasks.",
       suggestions: [
@@ -436,19 +488,8 @@ export default function Home() {
       ],
     },
     {
-      name: "Streamlit App",
-      icon: <SiPython />,
-      description: "Create fast data apps or prototypes with a web interface.",
-      suggestions: [
-        "Design interactive UIs",
-        "Display insights",
-        "Build MVP tools",
-        "Enable user input",
-      ],
-    },
-    {
       name: "FastAPI Backend",
-      icon: <FaCode />,
+      icon: <FaCogs />,
       description: "Create API backends for serving logic, data, or models.",
       suggestions: [
         "Build web APIs",
@@ -457,18 +498,8 @@ export default function Home() {
         "Add user auth",
       ],
     },
-    {
-      name: "Other",
-      icon: <FaCode />,
-      description:
-        "Perform general tasks, transformations, or creative utilities.",
-      suggestions: [
-        "Convert files",
-        "Format data",
-        "Generate diagrams",
-        "Support misc workflows",
-      ],
-    },
+
+    // --- Troubleshooting ---
     {
       name: "Troubleshooting",
       icon: <FaBug />,
@@ -479,6 +510,20 @@ export default function Home() {
         "Resolve crashes",
         "Investigate logs",
         "Diagnose problems",
+      ],
+    },
+
+    // --- Other ---
+    {
+      name: "Other",
+      icon: <FaCogs />,
+      description:
+        "Build a tool that converts Markdown notes into a searchable SQLite DB.",
+      suggestions: [
+        "Convert files",
+        "Format data",
+        "Generate diagrams",
+        "Support misc workflows",
       ],
     },
   ];
@@ -564,23 +609,65 @@ export default function Home() {
       <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 max-w-full mx-8 p-6 sm:p-6 lg:p-8 space-y-6">
-          <h1 className="text-4xl font-bold text-center pt-2 text-blue-500">
+          <h1 className="text-4xl font-bold text-center pt-2 text-blue-600">
             Select Your DevOps & AI Focus Areas
           </h1>
           <p className="text-lg text-center pb-4 text-gray-700 dark:text-gray-300">
             Select your DevOps and AI focus areas to generate code, streamline
             workflows, and accelerate delivery with AI-powered automation
           </p>
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={() =>
+                document
+                  .getElementById("copilot")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              style={{
+                fontSize: "12px",
+                fontFamily: "sans-serif",
+                backgroundColor: "#1D4ED8",
+                borderRadius: "6px",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "9px 13px",
+                cursor: "pointer",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+              }}
+            >
+              Launch Copilot
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="7" y1="17" x2="17" y2="7" />
+                <polyline points="7 7 17 7 17 17" />
+              </svg>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {tools.map((t) => (
               <button
                 key={t.name}
                 onClick={() => {
-                  setTool(t.name);
-                  setPrompt("");
+                  if (proTools.includes(t.name)) {
+                    setShowPremiumModal(true);
+                  } else {
+                    setTool(t.name);
+                    setPrompt("");
+                  }
                 }}
-                className={`flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm  transition ${
+                className={`relative flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition ${
                   t.name === tool
                     ? "bg-indigo-100 text-white"
                     : "bg-gray-100 dark:bg-gray-700 dark:text-white hover:border-indigo-300 hover:scale-105"
@@ -589,23 +676,29 @@ export default function Home() {
                 <div className="bg-blue-100 text-blue-700 p-2 rounded-lg mt-[6px]">
                   {t.icon}
                 </div>
-                <span className="">
-                  <div className="ml-3">
-                    <h3 className="text-base text-left font-semibold text-gray-900 dark:text-white">
-                      {t.name}
-                    </h3>
-                    <p className="text-start text-gray-500 dark:text-gray-400 text-sm">
-                      {t.description}
-                    </p>
-                  </div>
-                </span>
+                <div className="ml-3 text-left">
+                  <h3 className="flex justify-between items-start text-base font-semibold text-gray-900 dark:text-white gap-2">
+                    {t.name}
+                    {proTools.includes(t.name) && (
+                      <span
+                        className="ml-1 translate-y-[-2px] text-yellow-500 cursor-help"
+                        title="Pro Feature – Upgrade to unlock"
+                      >
+                        👑
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {t.description}
+                  </p>
+                </div>
               </button>
             ))}
           </div>
 
-          <div className="w-[70%] flex flex-col mx-auto">
+          <div className="w-[70%] flex flex-col mx-auto" id="copilot">
             <div className="flex flex-col items-center py-4">
-              <h1 className="text-4xl font-bold text-center py-3 text-blue-500">
+              <h1 className="text-4xl font-bold text-center py-3 text-blue-600">
                 Chat with Your DevOps & AI Copilot
               </h1>
               <p className="text-lg text-center pb-4 text-gray-700 dark:text-gray-300">
@@ -649,7 +742,7 @@ export default function Home() {
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className={`flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded transition
+              className={`flex justify-center items-center gap-2 bg-blue-700 hover:bg-blue-900 text-white font-bold py-2 px-6 rounded transition
                 ${limitReached ? "w-[190px]" : "w-[150px]"}
                 ${loading || limitReached ? "opacity-50" : ""}`}
             >
@@ -744,11 +837,19 @@ export default function Home() {
               </button>
             </div>
           )}
+          <div className="text-xs text-gray-500 mt-5 text-center">
+            Powered by <span className="font-semibold">CodeWeave</span> – Your
+            AI-powered DevOps Partner
+          </div>
         </main>
         <Footer />
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
+        />
+        <PremiumModal
+          isOpen={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
         />
       </div>
     </ClientWrapper>

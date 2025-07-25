@@ -1,11 +1,11 @@
 import UpgradeButton from "./UpgradeButton";
 
-interface UpgradeModalProps {
+interface PremiumModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+export default function PremiumModal({ isOpen, onClose }: PremiumModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -18,11 +18,11 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          No Free Tries Left
+          Pro Feature – Upgrade to unlock
         </h2>
         <p className="text-gray-700 dark:text-gray-300 mb-6">
-          You've used all your free tries. Upgrade to the Pro plan to continue
-          generating!
+          Unlock unlimited access, advanced features, and priority support with
+          the Pro plan to supercharge your experience!
         </p>
         <div className="flex justify-end gap-3 items-center">
           <button

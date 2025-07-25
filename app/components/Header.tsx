@@ -75,7 +75,7 @@ export default function Header() {
           className="h-12 w-12"
           priority
         />
-        <span className="text-2xl font-bold tracking-tight text-indigo-600 dark:text-white transition">
+        <span className="text-2xl font-bold tracking-tight text-[#1D4ED8] dark:text-white transition">
           CodeWeave
         </span>
       </Link>

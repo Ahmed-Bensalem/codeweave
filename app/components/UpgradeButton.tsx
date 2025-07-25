@@ -10,7 +10,8 @@ export default function UpgradeButton() {
   const { triesLeft, limitReached } = useLimitCheck();
 
   const currentPlan = (user?.unsafeMetadata.plan as string) || "free";
-  const targetPlan = currentPlan === "free" ? "pro" : currentPlan === "pro" ? "teams" : null;
+  const targetPlan =
+    currentPlan === "free" ? "pro" : currentPlan === "pro" ? "teams" : null;
 
   const handleUpgrade = async () => {
     if (!user) {
@@ -26,7 +27,12 @@ export default function UpgradeButton() {
     setLoading(true);
 
     try {
-      console.log("Initiating upgrade for user:", user.id, "to plan:", targetPlan);
+      console.log(
+        "Initiating upgrade for user:",
+        user.id,
+        "to plan:",
+        targetPlan
+      );
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,13 +61,32 @@ export default function UpgradeButton() {
         <a
           href="/pricing"
           // disabled={loading}
-          className="whitespace-nowrap bg-gradient-to-r from-indigo-400 to-indigo-600 text-white flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 transition"
+          className={`
+            
+            ${
+              loading
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:from-indigo-600 hover:to-indigo-800 hover:scale-102"
+            }
+          `}
+          style={{
+            fontSize: "14px",
+            fontFamily: "sans-serif",
+            backgroundColor: "#1D4ED8",
+            borderRadius: "6px",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "9px 13px",
+            cursor: "pointer",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+          }}
         >
-          <FaCrown />
           {loading ? "Redirecting..." : `Upgrade to ${targetPlan}`}
+          <FaCrown />
         </a>
       )}
-      
     </>
   );
 }

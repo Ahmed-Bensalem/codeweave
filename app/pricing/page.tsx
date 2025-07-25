@@ -76,7 +76,7 @@ export default function Pricing() {
       description:
         "For companies building production ready DevOps & GenAI solutions.",
       buttonText: "Contact sales",
-      buttonLink: "https://devops-copilot.onrender.com/",
+      buttonLink: "mailto:support@codeweave.co",
       features: [
         "Everything in Teams",
         "Unlimited generations (DevOps + GenAI)",
