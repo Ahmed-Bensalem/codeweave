@@ -24,23 +24,25 @@ export default function useLimitCheck() {
       setError("No user found");
       return;
     }
-    if (triesLeft <= 0) {
+
+    const tries = triesLeft ?? 0;
+    if (tries <= 0) {
       console.log("Cannot increment usage: No tries left");
       setError("No tries left");
       return;
     }
 
-    console.log("Decrementing triesLeft from:", triesLeft);
+    console.log("Decrementing triesLeft from:", tries);
     try {
       await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
-          triesLeft: triesLeft - 1,
+          triesLeft: tries - 1,
         },
       });
       await user.reload(); // Refresh user object to sync metadata
-      console.log("Successfully updated triesLeft to:", triesLeft - 1);
-      setTriesLeft(triesLeft - 1);
+      console.log("Successfully updated triesLeft to:", tries - 1);
+      setTriesLeft(tries - 1);
       setError(null);
     } catch (error) {
       console.error("Failed to update tries:", error);

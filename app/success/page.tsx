@@ -20,7 +20,7 @@ export default function SuccessPage() {
     <div className="text-center mt-20">
       <h1 className="text-3xl font-bold mb-4">✅ Payment Successful!</h1>
       <p className="text-lg mb-6">
-        You’ve been upgraded to Pro. Enjoy unlimited access to CodeWeave Copilot!
+        You’ve been upgraded your plan. Enjoy unlimited access to CodeWeave Copilot!
       </p>
       <button
         className="text-indigo-600 hover:underline"
