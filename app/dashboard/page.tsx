@@ -578,10 +578,11 @@ export default function Home() {
       const { code: generated } = await res.json();
       const cleanedCode =
         typeof generated === "string"
-          ? (generated.match(/```(?:[\s\S]*?)```/) || [])[0]
+          ? generated
+              .match(/```(?:[\s\S]*?)```/)?.[0]
               ?.replace(/```[\w]*\n?/, "")
               .replace(/```$/, "")
-              .trim()
+              .trim() || generated.trim() // fallback to full response if no code block
           : generated;
       setCode(cleanedCode || "No output returned.");
 
@@ -639,7 +640,7 @@ export default function Home() {
     <ClientWrapper>
       <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 max-w-full mx-8 p-6 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 max-w-full mx-8 p-0 sm:p-6 lg:p-8 space-y-6">
           <h1 className="text-4xl font-bold text-center pt-2 text-blue-600">
             Select Your DevOps & AI Focus Areas
           </h1>
@@ -699,7 +700,7 @@ export default function Home() {
                     setPrompt("");
                   }
                 }}
-                className={`relative flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition ${
+                className={`relative flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition m-auto sm:m-0 ${
                   t.name === tool
                     ? "bg-indigo-600 text-white dark:bg-indigo-500"
                     : "bg-gray-100 dark:bg-gray-700 dark:text-white hover:border-indigo-300 hover:scale-105"
@@ -742,7 +743,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="w-[70%] flex flex-col mx-auto" id="copilot">
+          <div className="w-full sm:w-[70%] flex flex-col mx-auto" id="copilot">
             <div className="flex flex-col items-center py-4">
               <h1 className="text-4xl font-bold text-center py-3 text-blue-600">
                 Chat with Your DevOps & AI Copilot
@@ -909,7 +910,7 @@ export default function Home() {
               </button>
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-5 text-center">
+          <div className="!mb-5 sm:mb-0 text-xs text-gray-500 mt-5 text-center">
             Powered by <span className="font-semibold">CodeWeave</span> – Your
             AI-powered DevOps Partner
           </div>

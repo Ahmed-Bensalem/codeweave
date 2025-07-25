@@ -5,6 +5,7 @@ import { FaRocket, FaCheck } from "react-icons/fa";
 import useLimitCheck from "./LimitChecker";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import CancelModal from "./CancelModal";
 
 type PricingCardProps = {
   icon?: React.ReactNode;
@@ -188,34 +189,13 @@ export default function PricingCard({
         </div>
       </div>
 
-      {/* Cancel Confirmation Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Confirm Cancellation
-            </h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to cancel your subscription? You will lose
-              access to premium features.
-            </p>
-            <div className="flex justify-end gap-3 items-center">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-900 rounded hover:bg-gray-300"
-              >
-                Close
-              </button>
-              <button
-                onClick={confirmCancel}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                {loading ? "Canceling..." : "Confirm Cancel"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
+      <CancelModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={confirmCancel}
+        loading={loading}
+      />
     </>
   );
 }
