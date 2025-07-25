@@ -7,7 +7,7 @@ import {
   atomOneDark,
   docco,
 } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   FaAws,
   FaMicrosoft,
@@ -23,6 +23,8 @@ import {
   FaRocket,
   FaChartBar,
   FaSpinner,
+  FaRegCopy,
+  FaDownload,
 } from "react-icons/fa";
 import {
   SiTerraform,
@@ -62,6 +64,12 @@ export default function Home() {
   const [error, setError] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [toolChanged, setToolChanged] = useState(false);
+
+  const { user } = useUser();
+  const plan = (user?.unsafeMetadata?.plan as string) || "free";
+  const isPremiumToolLocked = (toolName: string) =>
+    proTools.includes(toolName) && !["pro", "teams"].includes(plan);
 
   const proTools = [
     "Model Fine-Tuning Starter",
@@ -568,7 +576,15 @@ export default function Home() {
       }
 
       const { code: generated } = await res.json();
-      setCode(generated || "No output returned.");
+      const cleanedCode =
+        typeof generated === "string"
+          ? (generated.match(/```(?:[\s\S]*?)```/) || [])[0]
+              ?.replace(/```[\w]*\n?/, "")
+              .replace(/```$/, "")
+              .trim()
+          : generated;
+      setCode(cleanedCode || "No output returned.");
+
       console.log("Calling incrementUsage after successful generate");
       await incrementUsage();
       if (limitError) {
@@ -602,6 +618,21 @@ export default function Home() {
     )
       return "python";
     return "text";
+  };
+  const getFileExtension = (tool: string): string => {
+    if (tool.includes("Terraform")) return "tf";
+    if (
+      tool.includes("Python") ||
+      tool.includes("FastAPI") ||
+      tool.includes("LLM") ||
+      tool.includes("LangChain")
+    )
+      return "py";
+    if (tool.includes("Bash")) return "sh";
+    if (tool.includes("Docker")) return "Dockerfile";
+    if (tool.includes("Kubernetes") || tool.includes("Helm")) return "yaml";
+    if (tool.includes("Go")) return "go";
+    return "txt";
   };
 
   return (
@@ -660,16 +691,17 @@ export default function Home() {
               <button
                 key={t.name}
                 onClick={() => {
-                  if (proTools.includes(t.name)) {
+                  if (isPremiumToolLocked(t.name)) {
                     setShowPremiumModal(true);
                   } else {
+                    setToolChanged(true);
                     setTool(t.name);
                     setPrompt("");
                   }
                 }}
                 className={`relative flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition ${
                   t.name === tool
-                    ? "bg-indigo-100 text-white"
+                    ? "bg-indigo-600 text-white dark:bg-indigo-500"
                     : "bg-gray-100 dark:bg-gray-700 dark:text-white hover:border-indigo-300 hover:scale-105"
                 } dark:bg-gray-800`}
               >
@@ -677,18 +709,32 @@ export default function Home() {
                   {t.icon}
                 </div>
                 <div className="ml-3 text-left">
-                  <h3 className="flex justify-between items-start text-base font-semibold text-gray-900 dark:text-white gap-2">
+                  <h3
+                    className={`flex justify-between items-start text-base font-semibold gap-2 ${
+                      t.name === tool
+                        ? "text-white"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
                     {t.name}
-                    {proTools.includes(t.name) && (
-                      <span
-                        className="ml-1 translate-y-[-2px] text-yellow-500 cursor-help"
-                        title="Pro Feature – Upgrade to unlock"
-                      >
-                        👑
-                      </span>
-                    )}
+                    {proTools.includes(t.name) &&
+                      !["pro", "teams"].includes(plan) && (
+                        <span
+                          className="ml-1 translate-y-[-2px] text-yellow-500 cursor-help"
+                          title="Pro Feature – Upgrade to unlock"
+                        >
+                          👑
+                        </span>
+                      )}
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  <p
+                    className={`text-sm ${
+                      t.name === tool
+                        ? "text-white"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {" "}
                     {t.description}
                   </p>
                 </div>
@@ -716,7 +762,11 @@ export default function Home() {
                     setPrompt(e.target.value);
                     setShowSuggestions(true);
                   }}
-                  placeholder="Describe your setup or issue to fix..."
+                  placeholder={
+                    toolChanged
+                      ? tools.find((t) => t.name === tool)?.description ?? ""
+                      : "Describe your setup or issue to fix..."
+                  }
                   className="w-full h-44 p-3 border rounded dark:bg-gray-700 dark:text-white"
                 />
 
@@ -764,11 +814,33 @@ export default function Home() {
 
           {code && (
             <div className="space-y-2">
-              <h2 className="text-lg font-semibold">
-                {tool === "Troubleshooting"
-                  ? "🛠 Troubleshooting Steps"
-                  : "🧾 Generated Output"}
-              </h2>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-lg font-semibold">
+                  {tool === "Troubleshooting"
+                    ? "🛠 Troubleshooting Steps"
+                    : "🧾 Generated Output"}
+                </h2>
+
+                {typeof code === "string" && (
+                  <div className="flex items-center gap-3 text-xl">
+                    <FaRegCopy
+                      className="cursor-pointer hover:text-blue-600 transition"
+                      title="Copy code"
+                      onClick={() => navigator.clipboard.writeText(code)}
+                    />
+                    <FaDownload
+                      className="cursor-pointer hover:text-blue-600 transition"
+                      title="Download code"
+                      onClick={() =>
+                        saveAs(
+                          new Blob([code], { type: "text/plain" }),
+                          `codeweave-${tool}.${getFileExtension(tool)}`
+                        )
+                      }
+                    />
+                  </div>
+                )}
+              </div>
 
               {typeof code === "object" ? (
                 Object.entries(code).map(([filename, content], i) => {

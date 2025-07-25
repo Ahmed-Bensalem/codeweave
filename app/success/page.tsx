@@ -24,7 +24,7 @@ export default function SuccessPage() {
       </p>
       <button
         className="text-indigo-600 hover:underline"
-        onClick={() => router.push('/')}
+        onClick={() => router.push('/dashboard')}
       >
         Go to Dashboard
       </button>

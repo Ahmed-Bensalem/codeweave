@@ -31,8 +31,22 @@ function ShowUpgradeButtonIfFree() {
         </p>
       )}
       {plan === "pro" && (
-        <span className="bg-green-100 text-green-800 text-md font-medium px-2 py-1 rounded-full dark:bg-green-800 dark:text-green-100">
-          ✅ Pro User
+        <span
+          style={{
+            fontSize: "14px",
+            fontFamily: "sans-serif",
+            backgroundColor: "#22C55E", // Tailwind's green-800
+            borderRadius: "6px",
+            color: "#fff", // Tailwind's green-100
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "9px 13px",
+            cursor: "default",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+          }}
+        >
+          Pro User
         </span>
       )}
     </>
