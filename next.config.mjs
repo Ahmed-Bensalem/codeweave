@@ -16,6 +16,7 @@ const nextConfig = {
       {
         source: '/',
         destination: 'https://codeweave.co',
+        permanent: true,
       },
     ];
   },
