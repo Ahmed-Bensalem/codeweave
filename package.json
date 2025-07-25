@@ -15,6 +15,7 @@
     "@heroicons/react": "^2.2.0",
     "@icons-pack/react-simple-icons": "^13.5.0",
     "file-saver": "^2.0.5",
+    "micro": "^10.0.1",
     "next": "^15.4.4",
     "next-themes": "^0.4.6",
     "openai": "^5.9.0",
