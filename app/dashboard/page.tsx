@@ -61,6 +61,7 @@ export default function Home() {
   const [tool, setTool] = useState("Terraform");
   const [prompt, setPrompt] = useState("");
   const [code, setCode] = useState<CodeOutput>("");
+  const [cleanedCode, setCleanedCode] = useState<CodeOutput>("");
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState("");
@@ -599,8 +600,11 @@ export default function Home() {
       //         .replace(/```$/, "")
       //         .trim() || generated.trim()
       //     : generated;
+      setCleanedCode(cleanDisplayOutput(generated))
       const cleanedCode =
-        typeof generated === "string" ? generated.trim() : generated;
+        typeof generated === "string"
+          ? generated.trim()
+          : generated;
       setCode(cleanedCode || "No output returned.");
 
       if (plan === "free") {
@@ -707,56 +711,81 @@ export default function Home() {
 
     return "txt";
   };
+  function parseNamedCodeBlocks(text: string): Record<string, string> {
+    const fileRegex =
+      /(?:\*\*)?([a-zA-Z0-9_.\-]+\.\w+)(?:\*\*)?\s*:?\s*[\r\n]*```[\w+-]*[\r\n]+([\s\S]*?)```/g;
 
-  const handleDownload = async (tool: string, fullResponse: string) => {
-    const codeBlocks = extractCodeBlocks(fullResponse);
+    const files: Record<string, string> = {};
+    let match;
 
-    if (codeBlocks.length === 0) {
-      toast.error("No code blocks found to download.");
-      return;
+    while ((match = fileRegex.exec(text)) !== null) {
+      const filename = match[1].trim();
+      const content = match[2].trim();
+      files[filename] = content;
     }
 
-    const singleBlock = codeBlocks.length === 1 ? codeBlocks[0].code : null;
+    return files;
+  }
+  function cleanDisplayOutput(text: string): string {
+    return (
+      text
+        .replace(/```[\w+-]*\s*\n?/g, "")
+        .replace(/```/g, "")
+        .replace(/\n*\.\.\.\s*$/g, "")
+        .trim()
+    );
+  }
 
-    const multiFileMatch =
-      codeBlocks.length === 1 && singleBlock?.match(/(^|\n)#\s+[\w.\-]+\.\w+/);
-
-    if (multiFileMatch) {
+  const handleDownload = async (tool: string, fullResponse: string) => {
+    const namedFiles = parseNamedCodeBlocks(fullResponse);
+    if (Object.keys(namedFiles).length > 0) {
       const zip = new JSZip();
-      const fileSections = singleBlock?.split(/^---\s*$/gm);
-
-      fileSections?.forEach((section, i) => {
-        const nameMatch = section.match(/^#\s+(.+?\.\w+)/);
-        const filename =
-          nameMatch?.[1]?.trim() || `file${i + 1}.${getFileExtension(tool)}`;
-        const content = section.replace(/^#\s+.+?\.\w+/, "").trim();
+      for (const [filename, content] of Object.entries(namedFiles)) {
         zip.file(filename, content);
-      });
-
+      }
       const blob = await zip.generateAsync({ type: "blob" });
       saveAs(blob, `codeweave-${tool}.zip`);
       return;
     }
 
+    const codeBlocks = extractCodeBlocks(fullResponse);
+    if (codeBlocks.length === 0) {
+      toast.error("No code blocks found to download.");
+      return;
+    }
+
     if (codeBlocks.length === 1) {
+      const content = codeBlocks[0].code;
+      const matchesMultiFile = content.match(/(^|\n)#\s+[\w.\-]+\.\w+/);
+      if (matchesMultiFile) {
+        const zip = new JSZip();
+        const sections = content.split(/^---\s*$/gm);
+        sections.forEach((section, i) => {
+          const nameMatch = section.match(/^#\s+(.+?\.\w+)/);
+          const filename =
+            nameMatch?.[1]?.trim() || `file${i + 1}.${getFileExtension(tool)}`;
+          const body = section.replace(/^#\s+.+?\.\w+/, "").trim();
+          zip.file(filename, body);
+        });
+        const blob = await zip.generateAsync({ type: "blob" });
+        saveAs(blob, `codeweave-${tool}.zip`);
+        return;
+      }
+
       const ext = getFileExtension(codeBlocks[0].language || tool);
       const filename = ext === "Dockerfile" ? "Dockerfile" : `code.${ext}`;
-      const blob = new Blob([codeBlocks[0].code], {
-        type: "text/plain;charset=utf-8",
-      });
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
       saveAs(blob, filename);
       return;
     }
 
     const zip = new JSZip();
     codeBlocks.forEach((block, i) => {
-      const lang = block.language || tool;
-      const ext = getFileExtension(lang);
+      const ext = getFileExtension(block.language || tool);
       const filename =
         ext === "Dockerfile" ? "Dockerfile" : `code${i + 1}.${ext}`;
       zip.file(filename, block.code);
     });
-
     const blob = await zip.generateAsync({ type: "blob" });
     saveAs(blob, `codeweave-${tool}.zip`);
   };
@@ -833,29 +862,29 @@ export default function Home() {
               >
                 <div className="flex items-center justify-center">
                   <div className="bg-blue-100 text-blue-700 p-2 rounded-lg">
-                  {t.icon}
-                </div>
-                <div className="ml-3 text-left">
-                  <h3
-                    className={`flex justify-between items-start text-base font-semibold gap-2 ${
-                      t.name === tool
-                        ? "text-white"
-                        : "text-gray-900 dark:text-white"
-                    }`}
-                  >
-                    {t.name}
-                  </h3>
-                  <p
-                    className={`text-sm ${
-                      t.name === tool
-                        ? "text-white"
-                        : "text-gray-500 dark:text-gray-400"
-                    }`}
-                  >
-                    {" "}
-                    {/* {t.description} */}
-                  </p>
-                </div>
+                    {t.icon}
+                  </div>
+                  <div className="ml-3 text-left">
+                    <h3
+                      className={`flex justify-between items-start text-base font-semibold gap-2 ${
+                        t.name === tool
+                          ? "text-white"
+                          : "text-gray-900 dark:text-white"
+                      }`}
+                    >
+                      {t.name}
+                    </h3>
+                    <p
+                      className={`text-sm ${
+                        t.name === tool
+                          ? "text-white"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      {" "}
+                      {/* {t.description} */}
+                    </p>
+                  </div>
                 </div>
                 {proTools.includes(t.name) &&
                   !["pro", "teams"].includes(plan) && (
@@ -1042,7 +1071,7 @@ export default function Home() {
                     style={syntaxStyle}
                     className="p-4 text-sm sm:text-base"
                   >
-                    {code}
+                    {cleanedCode || code}
                   </SyntaxHighlighter>
                 </div>
               )}

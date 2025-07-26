@@ -121,8 +121,8 @@ export default function PricingCard({
                 </span>
               </>
             ) : (
-              <span className="text-black/75 text-xl font-normal">
-                {price}{" "}
+              <span className="text-black font-semibold text-[25px]">
+                {price}
               </span>
             )}
           </h2>
@@ -189,7 +189,6 @@ export default function PricingCard({
         </div>
       </div>
 
-      
       <CancelModal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
