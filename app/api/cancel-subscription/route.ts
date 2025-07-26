@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch the customer's subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: stripeCustomerId,
       status: "active",
@@ -49,12 +48,6 @@ export async function POST(req: NextRequest) {
 
     const subscription = subscriptions.data[0];
     await stripe.subscriptions.cancel(subscription.id);
-    console.log(
-      "Canceled subscription:",
-      subscription.id,
-      "for user:",
-      user.id
-    );
 
     await clerkClient.users.updateUserMetadata(user.id, {
       unsafeMetadata: {

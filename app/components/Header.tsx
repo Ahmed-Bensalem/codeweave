@@ -20,7 +20,6 @@ function ShowUpgradeButtonIfFree() {
   const { triesLeft, limitReached } = useLimitCheck();
   const currentPlan = (user?.unsafeMetadata.plan as string) || "free";
   const plan = user.unsafeMetadata?.plan;
-  console.log("🔍 Clerk plan:", plan); // Debugging
 
   return (
     <>
@@ -35,9 +34,9 @@ function ShowUpgradeButtonIfFree() {
           style={{
             fontSize: "14px",
             fontFamily: "sans-serif",
-            backgroundColor: "#22C55E", // Tailwind's green-800
+            backgroundColor: "#22C55E", 
             borderRadius: "6px",
-            color: "#fff", // Tailwind's green-100
+            color: "#fff", 
             display: "flex",
             alignItems: "center",
             gap: "10px",

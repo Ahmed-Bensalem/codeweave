@@ -1,4 +1,3 @@
-// app/ThemeWrapper.tsx
 'use client';
 
 import { useEffect, useState } from 'react';

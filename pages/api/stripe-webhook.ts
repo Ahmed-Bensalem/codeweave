@@ -1,4 +1,3 @@
-// pages/api/stripe-webhook.ts
 import { buffer } from "micro";
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";

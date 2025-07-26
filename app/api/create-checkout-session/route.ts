@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
   const { passedPlan } = await req.json();
   const plan = passedPlan || "pro";
   if (!userId) {
-    console.log("No authenticated user found");
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
   const priceIdMap: { [key: string]: string } = {
@@ -20,12 +19,6 @@ export async function POST(req: NextRequest) {
     teams: process.env.STRIPE_TEAMS_MONTHLY_PRICE_ID!,
   };
   try {
-    console.log(
-      "Creating Stripe checkout session for user:",
-      userId,
-      "with plan:",
-      plan
-    );
     if (!priceIdMap[plan]) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
@@ -45,7 +38,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("Stripe session created:", stripeSession.id);
     return NextResponse.json({ url: stripeSession.url });
   } catch (err) {
     console.error("❌ Stripe checkout failed for user:", userId, err);

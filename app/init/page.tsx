@@ -9,8 +9,8 @@ export default function InitPage() {
 
   const router = useRouter();
   useEffect(() => {
-    router.push("/dashboard"); // or wherever you want
+    router.push("/dashboard");
   }, []);
 
-  return null; // or a spinner/loading screen
+  return null; 
 }

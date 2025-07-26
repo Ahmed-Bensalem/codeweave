@@ -1,8 +1,9 @@
-// app/layout.tsx
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ReactNode, Suspense } from "react";
+import FullPageLoader from "./components/FullPageLoader";
+import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "CodeWeave",
@@ -17,9 +18,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <link rel="icon" href="/favicon.png" />
         </head>
         <body>
-          <Suspense fallback={<div className="p-4">Loading...</div>}>
-            {children}
-          </Suspense>
+          <Toaster position="top-right" />
+          <Suspense fallback={<FullPageLoader />}>{children}</Suspense>
         </body>
       </html>
     </ClerkProvider>

@@ -49,6 +49,8 @@ import useLimitCheck from "../components/LimitChecker";
 import ClientWrapper from "../components/ClientWrapper";
 import UpgradeModal from "../components/UpgradeModal";
 import PremiumModal from "../components/PremiumModal";
+import JSZip from "jszip";
+import toast from "react-hot-toast";
 
 type CodeOutput = string | Record<string, string>;
 
@@ -542,14 +544,27 @@ export default function Home() {
       s.toLowerCase().includes(prompt.toLowerCase())
     ) || [];
 
+  type CodeBlock = {
+    language: string;
+    code: string;
+  };
+  const extractCodeBlocks = (text: string): CodeBlock[] => {
+    const regex = /```(\w+)?\n([\s\S]*?)```/g;
+    const blocks: CodeBlock[] = [];
+    let match;
+    while ((match = regex.exec(text))) {
+      blocks.push({
+        language: (match[1] || "").toLowerCase(),
+        code: match[2].trim(),
+      });
+    }
+    return blocks;
+  };
+
   const handleGenerate = async () => {
     if (!prompt && !limitReached) return;
 
     if (limitReached) {
-      console.log(
-        "Limit reached, showing upgrade modal. Tries left:",
-        triesLeft
-      );
       setShowUpgradeModal(true);
       return;
     }
@@ -559,7 +574,7 @@ export default function Home() {
     setError("");
     try {
       const token = await getToken();
-      console.log("Sending generate request with token:", token);
+      //console.log("Sending generate request with token:", token);
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -576,20 +591,23 @@ export default function Home() {
       }
 
       const { code: generated } = await res.json();
+      // const cleanedCode =
+      //   typeof generated === "string"
+      //     ? generated
+      //         .match(/```(?:[\s\S]*?)```/)?.[0]
+      //         ?.replace(/```[\w]*\n?/, "")
+      //         .replace(/```$/, "")
+      //         .trim() || generated.trim()
+      //     : generated;
       const cleanedCode =
-        typeof generated === "string"
-          ? generated
-              .match(/```(?:[\s\S]*?)```/)?.[0]
-              ?.replace(/```[\w]*\n?/, "")
-              .replace(/```$/, "")
-              .trim() || generated.trim() // fallback to full response if no code block
-          : generated;
+        typeof generated === "string" ? generated.trim() : generated;
       setCode(cleanedCode || "No output returned.");
 
-      console.log("Calling incrementUsage after successful generate");
-      await incrementUsage();
-      if (limitError) {
-        setError(limitError); // Display metadata update error
+      if (plan === "free") {
+        await incrementUsage();
+        if (limitError) {
+          setError(limitError);
+        }
       }
     } catch (err) {
       setError("Error connecting to backend.");
@@ -612,6 +630,11 @@ export default function Home() {
     if (tool.includes("Docker")) return "dockerfile";
     if (tool.includes("Kubernetes") || tool.includes("Helm")) return "yaml";
     if (tool.includes("Go")) return "go";
+    if (tool.includes("Jenkins")) return "groovy";
+    if (tool.includes("Packer")) return "hcl";
+    if (tool.includes("Vault")) return "hcl";
+    if (tool.includes("Fine-tuning") || tool.includes("LLM Evaluation"))
+      return "json";
     if (
       tool.includes("FastAPI") ||
       tool.includes("LLM") ||
@@ -620,20 +643,122 @@ export default function Home() {
       return "python";
     return "text";
   };
-  const getFileExtension = (tool: string): string => {
-    if (tool.includes("Terraform")) return "tf";
+  const getFileExtension = (input: string): string => {
+    const val = (input || "").toLowerCase();
+
+    if (["python", "py", "python script"].includes(val)) return "py";
+    if (["bash", "shell", "sh", "bash script"].includes(val)) return "sh";
+    if (["yaml", "yml", "helm", "flux"].includes(val)) return "yaml";
+    if (["json"].includes(val)) return "json";
+    if (["go", "golang", "go script"].includes(val)) return "go";
+    if (["dockerfile", "docker"].includes(val)) return "Dockerfile";
+    if (["hcl", "terraform"].includes(val)) return "tf";
+    if (["jenkins", "jenkinsfile"].includes(val)) return "jenkinsfile";
+    if (["packer", "pkr.hcl"].includes(val)) return "pkr.hcl";
+    if (["text", "txt"].includes(val)) return "txt";
     if (
-      tool.includes("Python") ||
-      tool.includes("FastAPI") ||
-      tool.includes("LLM") ||
-      tool.includes("LangChain")
+      [
+        "fastapi",
+        "openai api",
+        "hugging face",
+        "streamlit",
+        "streamlit app",
+        "langchain",
+        "rag pipeline",
+        "llm evaluation toolkit",
+        "llm deployment",
+        "agent & tool builder",
+        "agent & tools",
+        "fastapi backend",
+        "fastapi backend for genai",
+        "model fine-tuning starter",
+        "model training pipeline",
+        "fine-tuning",
+      ].includes(val)
     )
       return "py";
-    if (tool.includes("Bash")) return "sh";
-    if (tool.includes("Docker")) return "Dockerfile";
-    if (tool.includes("Kubernetes") || tool.includes("Helm")) return "yaml";
-    if (tool.includes("Go")) return "go";
+    if (["ansible"].includes(val)) return "yml";
+    if (["aws lambda"].includes(val)) return "py";
+    if (
+      [
+        "pdf / document qa bot",
+        "chatbot builder",
+        "vector db",
+        "data preprocessing pipeline",
+      ].includes(val)
+    )
+      return "py";
+    if (["markdown", "md"].includes(val)) return "md";
+    if (["html", "web", "react"].includes(val)) return "html";
+
+    if (val.includes("terraform")) return "tf";
+    if (val.includes("docker")) return "Dockerfile";
+    if (val.includes("vault")) return "hcl";
+    if (val.includes("jenkins")) return "jenkinsfile";
+    if (val.includes("packer")) return "pkr.hcl";
+    if (val.includes("helm")) return "yaml";
+    if (val.includes("flux")) return "yaml";
+    if (val.includes("ansible")) return "yml";
+    if (val.includes("bash")) return "sh";
+    if (val.includes("python")) return "py";
+    if (val.includes("go")) return "go";
+    if (val.includes("yaml") || val.includes("yml")) return "yaml";
+    if (val.includes("json")) return "json";
+
     return "txt";
+  };
+
+  const handleDownload = async (tool: string, fullResponse: string) => {
+    const codeBlocks = extractCodeBlocks(fullResponse);
+
+    if (codeBlocks.length === 0) {
+      toast.error("No code blocks found to download.");
+      return;
+    }
+
+    const singleBlock = codeBlocks.length === 1 ? codeBlocks[0].code : null;
+
+    const multiFileMatch =
+      codeBlocks.length === 1 && singleBlock?.match(/(^|\n)#\s+[\w.\-]+\.\w+/);
+
+    if (multiFileMatch) {
+      const zip = new JSZip();
+      const fileSections = singleBlock?.split(/^---\s*$/gm);
+
+      fileSections?.forEach((section, i) => {
+        const nameMatch = section.match(/^#\s+(.+?\.\w+)/);
+        const filename =
+          nameMatch?.[1]?.trim() || `file${i + 1}.${getFileExtension(tool)}`;
+        const content = section.replace(/^#\s+.+?\.\w+/, "").trim();
+        zip.file(filename, content);
+      });
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveAs(blob, `codeweave-${tool}.zip`);
+      return;
+    }
+
+    if (codeBlocks.length === 1) {
+      const ext = getFileExtension(codeBlocks[0].language || tool);
+      const filename = ext === "Dockerfile" ? "Dockerfile" : `code.${ext}`;
+      const blob = new Blob([codeBlocks[0].code], {
+        type: "text/plain;charset=utf-8",
+      });
+      saveAs(blob, filename);
+      return;
+    }
+
+    const zip = new JSZip();
+    codeBlocks.forEach((block, i) => {
+      const lang = block.language || tool;
+      const ext = getFileExtension(lang);
+      const filename =
+        ext === "Dockerfile" ? "Dockerfile" : `code${i + 1}.${ext}`;
+      zip.file(filename, block.code);
+    });
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    saveAs(blob, `codeweave-${tool}.zip`);
   };
 
   return (
@@ -700,13 +825,14 @@ export default function Home() {
                     setPrompt("");
                   }
                 }}
-                className={`relative flex items-start max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition m-auto sm:m-0 ${
+                className={`relative flex items-center justify-between max-w-sm gap-2 p-4 rounded-lg shadow-md border text-sm transition m-auto sm:m-0 w-full ms:w-auto ${
                   t.name === tool
                     ? "bg-indigo-600 text-white dark:bg-indigo-500"
                     : "bg-gray-100 dark:bg-gray-700 dark:text-white hover:border-indigo-300 hover:scale-105"
                 } dark:bg-gray-800`}
               >
-                <div className="bg-blue-100 text-blue-700 p-2 rounded-lg mt-[6px]">
+                <div className="flex items-center justify-center">
+                  <div className="bg-blue-100 text-blue-700 p-2 rounded-lg">
                   {t.icon}
                 </div>
                 <div className="ml-3 text-left">
@@ -718,15 +844,6 @@ export default function Home() {
                     }`}
                   >
                     {t.name}
-                    {proTools.includes(t.name) &&
-                      !["pro", "teams"].includes(plan) && (
-                        <span
-                          className="ml-1 translate-y-[-2px] text-yellow-500 cursor-help"
-                          title="Pro Feature – Upgrade to unlock"
-                        >
-                          👑
-                        </span>
-                      )}
                   </h3>
                   <p
                     className={`text-sm ${
@@ -736,9 +853,19 @@ export default function Home() {
                     }`}
                   >
                     {" "}
-                    {t.description}
+                    {/* {t.description} */}
                   </p>
                 </div>
+                </div>
+                {proTools.includes(t.name) &&
+                  !["pro", "teams"].includes(plan) && (
+                    <span
+                      className="ml-1 translate-y-[-2px] text-yellow-500 cursor-help"
+                      title="Pro Feature – Upgrade to unlock"
+                    >
+                      👑
+                    </span>
+                  )}
               </button>
             ))}
           </div>
@@ -755,6 +882,7 @@ export default function Home() {
               <div className="relative w-full mx-auto">
                 <textarea
                   value={prompt}
+                  maxLength={8000}
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() =>
                     setTimeout(() => setShowSuggestions(false), 100)
@@ -768,11 +896,15 @@ export default function Home() {
                       ? tools.find((t) => t.name === tool)?.description ?? ""
                       : "Describe your setup or issue to fix..."
                   }
-                  className="w-full h-44 p-3 border rounded dark:bg-gray-700 dark:text-white"
+                  className="w-full max-h-[400px] min-h-[180px] p-3 border rounded dark:bg-gray-700 dark:text-white overflow-auto resize-y"
                 />
 
+                <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {prompt.length.toLocaleString()} / 8,000
+                </div>
+
                 {showSuggestions && suggestions.length > 0 && (
-                  <ul className="absolute left-0 right-0 max-h-56 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-20 divide-y divide-gray-100 dark:divide-gray-700">
+                  <ul className="absolute translate-y-[-20px] left-0 right-0 max-h-56 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-20 divide-y divide-gray-100 dark:divide-gray-700">
                     {suggestions.map((s, i) => (
                       <li
                         key={i}
@@ -832,12 +964,28 @@ export default function Home() {
                     <FaDownload
                       className="cursor-pointer hover:text-blue-600 transition"
                       title="Download code"
-                      onClick={() =>
-                        saveAs(
-                          new Blob([code], { type: "text/plain" }),
-                          `codeweave-${tool}.${getFileExtension(tool)}`
-                        )
-                      }
+                      onClick={() => {
+                        if (typeof code === "string") {
+                          handleDownload(tool, code);
+                        } else {
+                          const zip = new JSZip();
+                          Object.entries(code).forEach(
+                            ([filename, content]) => {
+                              const safeContent =
+                                typeof content === "string"
+                                  ? content
+                                  : JSON.stringify(content, null, 2);
+                              zip.file(filename, safeContent);
+                            }
+                          );
+
+                          zip
+                            .generateAsync({ type: "blob" })
+                            .then((content) => {
+                              saveAs(content, `codeweave-${tool}.zip`);
+                            });
+                        }
+                      }}
                     />
                   </div>
                 )}

@@ -10,7 +10,7 @@ export default function SuccessPage() {
 
   useEffect(() => {
     if (user?.reload) {
-      user.reload(); // ✅ force Clerk to reload metadata
+      user.reload();
     }
   }, [user]);
 

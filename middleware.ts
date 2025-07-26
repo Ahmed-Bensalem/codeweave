@@ -1,4 +1,3 @@
-// middleware.ts
 export const runtime = "experimental-edge";
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
